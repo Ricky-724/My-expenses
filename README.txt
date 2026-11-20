@@ -45,3 +45,15 @@ VERSION 1.4 ADDITIONS
 - On supported iOS Safari versions, this opens the iOS share sheet with the JSON backup attached. Choose “Save to Files”, then choose “On My iPhone” or iCloud Drive.
 - If file sharing is not supported, the app downloads the JSON backup; use the iOS Share menu and choose “Save to Files”.
 - iOS requires the user to confirm the save location. The app cannot silently write into the Files app.
+
+
+VERSION 2.0 DASHBOARD UPDATE
+- Premium dark purple appearance.
+- Home dashboard shows monthly income and monthly expenses.
+- Daily-spending bar chart; tap a date to open its daily expense details.
+- Separate Add Expense and Add Income dashboard buttons.
+- Recent Transactions shows the latest five combined income and expense entries.
+- Total Balance appears in Reports for the selected month (income minus expenses).
+- Monthly budget is not shown on the dashboard.
+- Income entry uses the same overall form layout as expense entry.
+- Existing localStorage keys are preserved: my-expenses-v1 and my-expenses-income-v1.
