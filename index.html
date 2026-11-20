@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f7f7f5">
+<title>My Expenses</title>
+<link rel="manifest" href="manifest.json">
+<style>
+:root{--bg:#f7f7f5;--card:#fff;--ink:#171717;--muted:#777;--line:#e9e9e5;--accent:#236b50;--soft:#eaf3ee;--red:#b44848}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:env(safe-area-inset-top) 0 calc(82px + env(safe-area-inset-bottom))}
+header{padding:22px 20px 12px;display:flex;justify-content:space-between;align-items:center}h1{font-size:25px;margin:0;font-weight:750;letter-spacing:-.6px}.sub{color:var(--muted);font-size:12px;margin-top:5px;letter-spacing:.5px}
+main{max-width:620px;margin:auto;padding:0 16px}.total{background:var(--ink);color:white;border-radius:20px;padding:22px;margin:10px 0 14px}.total .label{font-size:13px;color:#c8c8c8}.amount{font-size:34px;font-weight:750;margin:8px 0 3px}.total small{color:#c8c8c8}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px}.stat,.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:15px}.stat span{font-size:12px;color:var(--muted)}.stat strong{display:block;font-size:19px;margin-top:6px}
+.section-head{display:flex;justify-content:space-between;align-items:center;margin:22px 2px 10px}.section-head h2{font-size:17px;margin:0}.section-head button{border:0;background:none;color:var(--accent);font-weight:650}
+.panel{padding:0 15px}.row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--line);gap:12px}.row:last-child{border:0}.left{display:flex;align-items:center;gap:11px;min-width:0}.ico{width:40px;height:40px;border-radius:13px;background:#f1f2ef;display:grid;place-items:center;font-size:19px;flex:none}.name{font-weight:650;font-size:14px}.meta{font-size:12px;color:var(--muted);margin-top:4px}.money{font-weight:700;white-space:nowrap}.empty{padding:24px 8px;text-align:center;color:var(--muted);font-size:14px}
+nav{position:fixed;bottom:0;left:0;right:0;background:#ffffffed;backdrop-filter:blur(14px);border-top:1px solid var(--line);padding:10px 18px calc(10px + env(safe-area-inset-bottom));display:flex;justify-content:space-around;z-index:5}
+nav button{background:none;border:0;color:var(--muted);font-size:11px;display:grid;gap:4px;justify-items:center}nav button b{font-size:21px;font-weight:500}nav button.active{color:var(--accent)}
+.fab{position:fixed;right:20px;bottom:90px;width:58px;height:58px;border:0;border-radius:50%;background:var(--accent);color:white;font-size:30px;box-shadow:0 5px 18px #0002;z-index:6}
+.screen{display:none}.screen.active{display:block}
+form{display:grid;gap:13px;padding:16px}label{font-size:13px;color:#555;font-weight:600}input,select,textarea{width:100%;margin-top:6px;border:1px solid var(--line);border-radius:12px;padding:13px;background:#fafaf9;color:var(--ink);font:16px inherit;outline:none}textarea{resize:vertical;min-height:70px}
+.primary{background:var(--accent);color:#fff;border:0;border-radius:13px;padding:15px;font-size:16px;font-weight:700}.secondary{background:#f0f1ee;border:0;border-radius:12px;padding:12px;font-weight:650;color:var(--ink)}
+.form-actions{display:flex;gap:9px}.form-actions>*{flex:1}
+.tools{display:grid;gap:10px}.tools button{width:100%;text-align:left}
+.category-line{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--line);font-size:14px}.category-tap{width:100%;text-align:left;border:0;background:transparent;color:inherit;cursor:pointer}.detail-head{background:var(--soft);border-radius:14px;padding:13px;margin-bottom:12px}.bar{height:7px;background:#eee;border-radius:8px;margin-top:7px;overflow:hidden}.bar i{display:block;height:100%;background:var(--accent);border-radius:8px}
+.small{font-size:12px;color:var(--muted)}.lock-screen{position:fixed;inset:0;background:var(--bg);z-index:20;display:none;align-items:center;justify-content:center;padding:24px}.lock-card{width:100%;max-width:390px;background:white;border:1px solid var(--line);border-radius:22px;padding:24px;text-align:center}.lock-card input{margin:12px 0}.filter{display:flex;gap:8px;margin-bottom:12px}.filter>*{flex:1}
+@media(min-width:650px){header{max-width:620px;margin:auto}}
+</style>
+</head>
+<body>
+<header><div><h1>My Expenses</h1><div class="sub" id="todayLabel"></div></div><div style="font-size:22px">◷</div></header>
+<div class="lock-screen" id="lockScreen"><div class="lock-card">
+ <div style="font-size:34px">🔒</div><h2 style="margin:10px 0 4px">My Expenses is locked</h2>
+ <p class="small">Unlock to view your personal expenses.</p>
+ <button class="primary" id="biometricUnlock" onclick="unlockWithBiometric()" style="width:100%;display:none">Unlock with Face ID</button>
+ <input id="unlockPassword" type="password" placeholder="Enter password" autocomplete="current-password">
+ <button class="primary" onclick="unlockWithPassword()" style="width:100%">Unlock</button>
+ <p class="small" id="lockMessage"></p>
+</div></div>
+<main>
+<section id="home" class="screen active">
+ <div class="total"><div class="label">TOTAL SPENT THIS MONTH</div><div class="amount" id="monthTotal">₹0</div><small id="monthCaption">Your spending at a glance</small></div>
+ <div class="stats"><div class="stat"><span>Spent today</span><strong id="todayTotal">₹0</strong></div><div class="stat"><span>Transactions this month</span><strong id="monthCount">0</strong></div><div class="stat"><span>Cash this month</span><strong id="cashTotal">₹0</strong></div><div class="stat"><span>UPI this month</span><strong id="upiTotal">₹0</strong></div></div>
+ <div class="section-head"><h2>Recent expenses</h2><button onclick="showScreen('history')">See all</button></div>
+ <div class="panel" id="recentList"></div>
+ <div class="section-head"><h2>Top categories</h2><button onclick="showScreen('reports')">View report</button></div>
+ <div class="panel" id="topCategories" style="padding:4px 15px"></div>
+</section>
+<section id="add" class="screen">
+ <div class="section-head"><h2 id="formTitle">Add expense</h2></div>
+ <div class="panel"><form id="expenseForm">
+  <label>Amount (₹)<input id="amount" type="number" min="0.01" step="0.01" placeholder="e.g. 250" required inputmode="decimal"></label>
+  <label>Category<select id="category"></select></label>
+  <label>Date<input id="date" type="date" required></label>
+  <label>Payment method<select id="payment"><option>UPI</option><option>Cash</option><option>Credit card</option><option>Debit card</option><option>Bank transfer</option><option>Other</option></select></label>
+  <label>Note (optional)<textarea id="note" placeholder="What was this expense for?"></textarea></label>
+  <div class="form-actions"><button type="button" class="secondary" onclick="resetForm();showScreen('home')">Cancel</button><button class="primary" type="submit">Save expense</button></div>
+ </form></div>
+</section>
+<section id="history" class="screen">
+ <div class="section-head"><h2>All expenses</h2><span class="small" id="historyCount"></span></div>
+ <div id="categoryDetailHead" class="detail-head" style="display:none"></div><div class="filter"><input id="monthFilter" type="month" aria-label="Filter month"><select id="categoryFilter" aria-label="Filter category"><option value="">All categories</option></select></div>
+ <div class="panel" id="historyList"></div>
+</section>
+<section id="diary" class="screen">
+ <div class="section-head"><h2>Daily expense diary</h2></div>
+ <div class="filter"><input id="diaryDate" type="date" aria-label="Choose diary date"></div>
+ <div class="stats">
+  <div class="stat"><span>Total spent</span><strong id="diaryTotal">₹0</strong></div>
+  <div class="stat"><span>Transactions</span><strong id="diaryCount">0</strong></div>
+  <div class="stat"><span>Cash spent</span><strong id="diaryCash">₹0</strong></div>
+  <div class="stat"><span>UPI spent</span><strong id="diaryUpi">₹0</strong></div>
+ </div>
+ <div class="section-head"><h2>What I spent on</h2><span class="small" id="diaryLabel"></span></div>
+ <div class="panel" id="diaryList"></div>
+</section>
+<section id="reports" class="screen">
+ <div class="section-head"><h2>Monthly report</h2></div>
+ <div class="filter"><input id="reportMonth" type="month" aria-label="Report month"></div>
+ <div class="total"><div class="label">TOTAL SPENT</div><div class="amount" id="reportTotal">₹0</div><small id="reportCount">0 expenses</small></div>
+ <div class="section-head"><h2>Category breakdown</h2></div><div class="panel" id="reportCategories" style="padding:4px 15px"></div>
+</section>
+<section id="settings" class="screen">
+ <div class="section-head"><h2>Settings & backup</h2></div>
+ <div class="panel tools" style="padding:15px">
+  <div><b>Data stays on this iPhone</b><p class="small">Your expenses are saved in this browser on this device. They are not sent to a server.</p></div>
+  <button class="primary" onclick="saveBackupToFiles()">▣ &nbsp; Save backup to Files</button>
+  <p class="small" style="margin:0 2px 4px">On the iPhone share sheet, choose “Save to Files”, then select “On My iPhone” or iCloud Drive. iOS asks you where to save it.</p>
+  <button class="secondary" onclick="exportJSON()">⇩ &nbsp; Download backup (JSON)</button>
+  <button class="secondary" onclick="exportCSV()">▤ &nbsp; Export expenses (CSV)</button>
+  <label class="secondary" style="display:block">⇧ &nbsp; Restore from backup (JSON)<input type="file" id="importFile" accept=".json,application/json" style="display:block;background:transparent;border:0;padding:8px 0 0"></label>
+  <button class="secondary" onclick="if(confirm('Delete every saved expense? Export a backup first.')){save([]);render()}">Delete all expenses</button>
+  <div style="border-top:1px solid var(--line);padding-top:14px">
+   <b>App lock</b>
+   <p class="small">Set a password to protect this expense tracker when it opens.</p>
+   <label>Create or change password<input id="newPassword" type="password" autocomplete="new-password" placeholder="At least 6 characters"></label>
+   <button class="secondary" onclick="setPassword()" style="width:100%;margin-top:8px">Save password</button>
+   <button class="secondary" onclick="removePassword()" style="width:100%;margin-top:8px">Turn off password lock</button>
+   <div style="height:12px"></div>
+   <b>Face ID / iPhone biometric unlock</b>
+   <p class="small">On a supported iPhone, Safari may show Face ID or the device passcode. Requires HTTPS and a compatible authenticator.</p>
+   <button class="secondary" onclick="enrollBiometric()" style="width:100%">Enable Face ID unlock</button>
+   <button class="secondary" onclick="removeBiometric()" style="width:100%;margin-top:8px">Turn off Face ID unlock</button>
+   <p class="small" id="securityStatus">No lock configured.</p>
+  </div>
+  <p class="small">Tip: Export a backup regularly and save it in the Files app or iCloud Drive. Clearing Safari website data may erase expenses stored here.</p>
+  <p class="small">My Expenses · Version 1.0</p>
+ </div>
+</section>
+</main>
+<button class="fab" id="fab" aria-label="Add expense" onclick="newExpense()">+</button>
+<nav>
+ <button class="active" data-screen="home" onclick="showScreen('home')"><b>⌂</b>Home</button>
+ <button data-screen="history" onclick="showScreen('history')"><b>▤</b>History</button>
+ <button data-screen="diary" onclick="showScreen('diary')"><b>☷</b>Daily</button>
+ <button data-screen="reports" onclick="showScreen('reports')"><b>◔</b>Reports</button>
+ <button data-screen="settings" onclick="showScreen('settings')"><b>⚙</b>Settings</button>
+</nav>
+<script>
+const KEY='my-expenses-v1';
+const categories=[['Food','🍽️'],['Petrol','⛽'],['Shopping','🛍️'],['Travel','🚕'],['Bills','🧾'],['Gym & Fitness','💪'],['Health','❤️'],['Entertainment','🎬'],['Groceries','🛒'],['Personal','👤'],['Other','📦']];
+let expenses=load(), editingId=null;
+function load(){try{return JSON.parse(localStorage.getItem(KEY)||'[]')}catch(e){return []}}
+function save(data){expenses=data;localStorage.setItem(KEY,JSON.stringify(expenses))}
+const $=id=>document.getElementById(id);
+const money=n=>'₹'+Number(n||0).toLocaleString('en-IN',{maximumFractionDigits:2});
+const today=()=>new Date().toISOString().slice(0,10);
+const month=()=>today().slice(0,7);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function catEmoji(c){return (categories.find(x=>x[0]===c)||['','📌'])[1]}
+function init(){
+ $('todayLabel').textContent=new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'}).toUpperCase();
+ $('date').value=today();$('monthFilter').value=month();$('reportMonth').value=month();$('diaryDate').value=today();$('diaryDate').addEventListener('change',renderDiary);
+ $('category').innerHTML=categories.map(c=>`<option>${c[0]}</option>`).join('');
+ $('categoryFilter').innerHTML='<option value="">All categories</option>'+categories.map(c=>`<option>${c[0]}</option>`).join('');
+ ['monthFilter','categoryFilter','reportMonth'].forEach(id=>$(id).addEventListener('change',render));
+ $('expenseForm').addEventListener('submit',submitExpense);
+ $('importFile').addEventListener('change',importJSON);
+ render();
+}
+function showScreen(name){
+ document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('active',s.id===name));
+ document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b.dataset.screen===name));
+ $('fab').style.display=name==='home'||name==='history'||name==='diary'?'block':'none';
+ if(name==='history')renderHistory();if(name==='diary')renderDiary();if(name==='reports')renderReport();
+}
+function newExpense(){resetForm();showScreen('add')}
+function resetForm(){editingId=null;$('expenseForm').reset();$('date').value=today();$('formTitle').textContent='Add expense'}
+function submitExpense(e){
+ e.preventDefault();const amount=Number($('amount').value);
+ if(!Number.isFinite(amount)||amount<=0){alert('Enter an amount greater than zero.');return}
+ const item={id:editingId||String(Date.now()),amount,category:$('category').value,date:$('date').value,payment:$('payment').value,note:$('note').value.trim()};
+ if(editingId)expenses=expenses.map(x=>x.id===editingId?item:x);else expenses.push(item);
+ save(expenses);resetForm();render();showScreen('home');
+}
+function entryHTML(x){return `<div class="row"><div class="left"><div class="ico">${catEmoji(x.category)}</div><div style="min-width:0"><div class="name">${esc(x.category)}</div><div class="meta">${esc(x.date)} · ${esc(x.payment)}${x.note?' · '+esc(x.note):''}</div></div></div><div style="text-align:right"><div class="money">${money(x.amount)}</div><div class="meta"><button onclick="editExpense('${esc(x.id)}')" style="border:0;background:none;color:var(--accent);padding:5px">Edit</button><button onclick="deleteExpense('${esc(x.id)}')" style="border:0;background:none;color:var(--red);padding:5px">Delete</button></div></div></div>`}
+function render(){
+ const m=month(), mt=expenses.filter(x=>x.date?.startsWith(m)), td=expenses.filter(x=>x.date===today());
+ $('monthTotal').textContent=money(mt.reduce((a,x)=>a+x.amount,0));$('todayTotal').textContent=money(td.reduce((a,x)=>a+x.amount,0));$('monthCount').textContent=mt.length;$('cashTotal').textContent=money(mt.filter(x=>x.payment==='Cash').reduce((a,x)=>a+x.amount,0));$('upiTotal').textContent=money(mt.filter(x=>x.payment==='UPI').reduce((a,x)=>a+x.amount,0));
+ const recent=[...expenses].sort((a,b)=>b.date.localeCompare(a.date)||b.id.localeCompare(a.id)).slice(0,5);
+ $('recentList').innerHTML=recent.length?recent.map(entryHTML).join(''):'<div class="empty">No expenses yet. Tap + to add your first expense.</div>';
+ const sums=categorySums(mt).slice(0,4);$('topCategories').innerHTML=sums.length?sums.map(([c,v])=>`<button class="category-line category-tap" onclick="openCategory('${esc(c)}')"><span>${catEmoji(c)} &nbsp;${esc(c)}</span><b>${money(v)}　›</b></button>`).join(''):'<div class="empty">Your category summary will appear here.</div>';
+ renderHistory();renderReport();renderDiary();
+}
+function renderDiary(){
+ if(!$('diaryDate'))return;
+ const d=$('diaryDate').value||today(),items=expenses.filter(x=>x.date===d).sort((a,b)=>b.id.localeCompare(a.id));
+ const sum=key=>items.filter(x=>x.payment===key).reduce((a,x)=>a+x.amount,0);
+ $('diaryTotal').textContent=money(items.reduce((a,x)=>a+x.amount,0));
+ $('diaryCash').textContent=money(sum('Cash'));
+ $('diaryUpi').textContent=money(sum('UPI'));
+ $('diaryCount').textContent=items.length;
+ $('diaryLabel').textContent=new Date(d+'T12:00:00').toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+ $('diaryList').innerHTML=items.length?items.map(entryHTML).join(''):'<div class="empty">No expenses recorded for this date. Tap + to add one.</div>';
+}
+function categorySums(items){const o={};items.forEach(x=>o[x.category]=(o[x.category]||0)+x.amount);return Object.entries(o).sort((a,b)=>b[1]-a[1])}
+function renderHistory(){
+ if(!$('historyList'))return;
+ let list=[...expenses].sort((a,b)=>b.date.localeCompare(a.date)||b.id.localeCompare(a.id));
+ if($('monthFilter').value)list=list.filter(x=>x.date.startsWith($('monthFilter').value));
+ if($('categoryFilter').value)list=list.filter(x=>x.category===$('categoryFilter').value);
+ $('historyCount').textContent=list.length+' entries';
+ const chosen=$('categoryFilter').value, head=$('categoryDetailHead');
+ if(chosen){
+   const total=list.reduce((a,x)=>a+x.amount,0);
+   head.style.display='block';
+   head.innerHTML=`<div style="font-weight:750;font-size:16px">${catEmoji(chosen)} &nbsp;${esc(chosen)} details</div><div style="font-size:22px;font-weight:750;margin-top:5px">${money(total)}</div><div class="small">${list.length} expense${list.length===1?'':'s'} · Notes are shown under each expense when added</div>`;
+ }else{head.style.display='none';head.innerHTML=''}
+ $('historyList').innerHTML=list.length?list.map(entryHTML).join(''):'<div class="empty">No expenses match this filter.</div>';
+}
+function renderReport(){
+ if(!$('reportMonth'))return;const m=$('reportMonth').value||month(),items=expenses.filter(x=>x.date.startsWith(m)),total=items.reduce((a,x)=>a+x.amount,0);
+ $('reportTotal').textContent=money(total);$('reportCount').textContent=items.length+' expenses';
+ const sums=categorySums(items);$('reportCategories').innerHTML=sums.length?sums.map(([c,v])=>`<button class="category-line category-tap" style="display:block" onclick="openCategory('${esc(c)}')"><div style="display:flex;justify-content:space-between"><span>${catEmoji(c)} &nbsp;${esc(c)}</span><b>${money(v)}　›</b></div><div class="bar"><i style="width:${total?Math.max(2,v/total*100):0}%"></i></div></button>`).join(''):'<div class="empty">No expenses for this month.</div>';
+}
+function openCategory(category){
+ $('categoryFilter').value=category;
+ $('monthFilter').value='';
+ showScreen('history');
+ renderHistory();
+}
+function editExpense(id){const x=expenses.find(a=>a.id===id);if(!x)return;editingId=id;$('formTitle').textContent='Edit expense';$('amount').value=x.amount;$('category').value=x.category;$('date').value=x.date;$('payment').value=x.payment;$('note').value=x.note||'';showScreen('add')}
+function deleteExpense(id){if(confirm('Delete this expense?')){save(expenses.filter(x=>x.id!==id));render()}}
+function download(name,content,type){const blob=new Blob([content],{type}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();URL.revokeObjectURL(url)}
+function backupData(){return JSON.stringify({version:1,exportedAt:new Date().toISOString(),expenses},null,2)}
+function exportJSON(){download('my-expenses-backup-'+today()+'.json',backupData(),'application/json')}
+async function saveBackupToFiles(){
+ const filename='my-expenses-backup-'+today()+'.json';
+ const blob=new Blob([backupData()],{type:'application/json'});
+ const file=new File([blob],filename,{type:'application/json'});
+ if(navigator.share && navigator.canShare && navigator.canShare({files:[file]})){
+  try{
+   await navigator.share({files:[file],title:'My Expenses backup',text:'Save this backup in the Files app.'});
+   return;
+  }catch(err){
+   if(err && err.name==='AbortError')return;
+  }
+ }
+ download(filename,blob,'application/json');
+ alert('Your backup download has started. Open the downloaded file and use Share → Save to Files.');
+}
+function csvCell(v){return '"'+String(v??'').replace(/"/g,'""')+'"'}
+function exportCSV(){const rows=[['Date','Amount INR','Category','Payment method','Note'],...expenses.map(x=>[x.date,x.amount,x.category,x.payment,x.note||''])];download('my-expenses-'+today()+'.csv','\ufeff'+rows.map(r=>r.map(csvCell).join(',')).join('\n'),'text/csv;charset=utf-8')}
+function importJSON(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result),arr=Array.isArray(d)?d:d.expenses;if(!Array.isArray(arr)||!arr.every(x=>x&&x.date&&Number(x.amount)>0&&x.category))throw Error();if(confirm('Restore '+arr.length+' expenses? This replaces the current list.')){save(arr.map(x=>({...x,id:String(x.id||Date.now()+Math.random())})));render();alert('Backup restored.')}}catch(err){alert('This backup file is not valid.')}e.target.value=''};r.readAsText(f)}
+
+const PASS_KEY='my-expenses-password-v1', BIO_KEY='my-expenses-biometric-id-v1';
+let appUnlocked=false;
+function b64(bytes){return btoa(String.fromCharCode(...new Uint8Array(bytes)))}
+function unb64(s){return Uint8Array.from(atob(s),c=>c.charCodeAt(0))}
+async function hashPassword(password,salt){
+ const enc=new TextEncoder(),key=await crypto.subtle.importKey('raw',enc.encode(password),'PBKDF2',false,['deriveBits']);
+ const bits=await crypto.subtle.deriveBits({name:'PBKDF2',salt,iterations:180000,hash:'SHA-256'},key,256);
+ return b64(bits);
+}
+async function setPassword(){
+ const pw=$('newPassword').value;
+ if(pw.length<6){alert('Please use at least 6 characters.');return}
+ const salt=crypto.getRandomValues(new Uint8Array(16)),digest=await hashPassword(pw,salt);
+ localStorage.setItem(PASS_KEY,JSON.stringify({salt:b64(salt),digest}));
+ $('newPassword').value='';$('securityStatus').textContent='Password lock is enabled.';
+ alert('Password saved. You will need it when opening the app.');
+}
+function removePassword(){
+ if(!localStorage.getItem(PASS_KEY)){alert('No password lock is set.');return}
+ if(!confirm('Turn off password lock?'))return;
+ localStorage.removeItem(PASS_KEY);$('securityStatus').textContent='Password lock is off.';
+}
+async function unlockWithPassword(){
+ const saved=JSON.parse(localStorage.getItem(PASS_KEY)||'null');
+ if(!saved){unlockApp();return}
+ const attempt=await hashPassword($('unlockPassword').value,unb64(saved.salt));
+ if(attempt===saved.digest){$('unlockPassword').value='';unlockApp()}
+ else $('lockMessage').textContent='Incorrect password. Try again.';
+}
+function unlockApp(){appUnlocked=true;$('lockScreen').style.display='none';}
+function lockApp(){if(!localStorage.getItem(PASS_KEY)&&!localStorage.getItem(BIO_KEY))return;appUnlocked=false;$('lockScreen').style.display='flex';$('biometricUnlock').style.display=localStorage.getItem(BIO_KEY)?'block':'none';}
+async function enrollBiometric(){
+ if(!window.PublicKeyCredential||!navigator.credentials){alert('Biometric unlock is not available in this browser. Open the app in Safari on a supported iPhone using HTTPS.');return}
+ if(!window.isSecureContext){alert('Face ID setup requires a secure HTTPS website.');return}
+ try{
+  const userId=crypto.getRandomValues(new Uint8Array(16)),challenge=crypto.getRandomValues(new Uint8Array(32));
+  const credential=await navigator.credentials.create({publicKey:{challenge,rp:{name:'My Expenses'},user:{id:userId,name:'iphone-user',displayName:'My Expenses user'},pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],authenticatorSelection:{authenticatorAttachment:'platform',residentKey:'required',userVerification:'required'},timeout:60000,attestation:'none'}});
+  if(!credential)throw new Error('No credential returned');
+  localStorage.setItem(BIO_KEY,b64(credential.rawId));
+  $('securityStatus').textContent='iPhone biometric unlock is registered. Your iPhone may use Face ID or device passcode.';
+  alert('Biometric unlock enabled. Your iPhone will decide whether to use Face ID or the device passcode.');
+ }catch(e){alert('Could not enable Face ID: '+(e.message||'Setup cancelled or unsupported.'))}
+}
+async function unlockWithBiometric(){
+ try{
+  const id=unb64(localStorage.getItem(BIO_KEY)),challenge=crypto.getRandomValues(new Uint8Array(32));
+  const assertion=await navigator.credentials.get({publicKey:{challenge,allowCredentials:[{type:'public-key',id}],userVerification:'required',timeout:60000}});
+  if(!assertion)throw new Error('No assertion');
+  const authData=new Uint8Array(assertion.response.authenticatorData);
+  if(!(authData[32]&0x04))throw new Error('User verification was not confirmed');
+  unlockApp();
+ }catch(e){$('lockMessage').textContent='Biometric unlock unavailable. Use your password instead.'}
+}
+function removeBiometric(){
+ localStorage.removeItem(BIO_KEY);$('securityStatus').textContent='Biometric unlock is off.';
+ if($('lockScreen').style.display==='flex')$('biometricUnlock').style.display='none';
+}
+function initializeSecurity(){
+ const hasPassword=!!localStorage.getItem(PASS_KEY),hasBio=!!localStorage.getItem(BIO_KEY);
+ $('securityStatus').textContent=hasPassword||hasBio?'A lock is configured on this device.':'No lock configured.';
+ if(hasPassword||hasBio)lockApp();
+}
+
+init();initializeSecurity();
+if('serviceWorker' in navigator && location.protocol.startsWith('http'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+</script>
+</body></html>
